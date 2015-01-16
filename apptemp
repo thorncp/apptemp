@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+NUM = 20
+
+# slight hack using grep to only list non-binary files
+files_we_care_about = `git grep --cached -Ile '' -- app`.split
+
+stuff = Hash.new { |h, k| h[k] = {} }
+
+files_we_care_about.each do |file|
+  stuff[file][:commit_count] = `git log --pretty="%H" -- #{file} | wc -l`.to_i
+  stuff[file][:line_count] = `cat #{file} | wc -l`.to_i
+end
+
+puts "****** by commits"
+
+stuff.sort_by { |_, s| -s[:commit_count] }.take(NUM).each do |file, details|
+  puts "#{details[:commit_count]}\t#{file}"
+end
+
+puts
+puts "****** by lines"
+
+stuff.sort_by { |_, s| -s[:line_count] }.take(NUM).each do |file, details|
+  puts "#{details[:line_count]}\t#{file}"
+end
