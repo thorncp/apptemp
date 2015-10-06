@@ -6,7 +6,7 @@ Options = Struct.new(:num_results, :directory, :extensions)
 
 options = Options.new(
   20,
-  "app",
+  ".",
   %w[
     css
     erb
