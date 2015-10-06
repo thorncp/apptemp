@@ -1,22 +1,78 @@
 #!/usr/bin/env ruby
 
-NUM = 20
+require "optparse"
 
-directory = ARGV.shift || "app"
-extensions = %w{
-  css
-  erb
-  haml
-  html
-  jbuilder
-  js
-  js
-  rb
-  scss
-  sql
-}
-file_pattern = ARGV.shift || "**/*.{#{extensions.join(',')}}"
-path = File.join(directory, file_pattern)
+Options = Struct.new(:num_results, :directory, :extensions)
+
+options = Options.new(
+  20,
+  "app",
+  %w[
+    css
+    erb
+    haml
+    html
+    jbuilder
+    js
+    rb
+    scss
+    sql
+  ]
+)
+
+OptionParser.new do |opts|
+  opts.banner = "Find hot spots in a git repository."
+
+  opts.separator ""
+  opts.separator "Usage:"
+  opts.separator "    apptemp [options]"
+
+  opts.separator ""
+  opts.separator "Options:"
+
+  opts.on(
+    "-d",
+    "--directory path",
+    "Directory to survey.",
+    "Default: #{options.directory}",
+  ) do |directory|
+    options.directory = directory
+  end
+
+  opts.on(
+    "-e",
+    "--extensions x,y,z",
+    Array,
+    "File extensions to survey.",
+    "Default: #{options.extensions.join(',')}",
+  ) do |extensions|
+    options.extensions = extensions
+  end
+
+  opts.on(
+    "-n",
+    "--num-results N",
+    Integer,
+    "Number of results display.",
+    "Default: #{options.num_results}",
+  ) do |num_results|
+    options.num_results = num_results
+  end
+
+  opts.on_tail "-h", "--help", "Print help." do
+    puts opts
+    exit
+  end
+end.parse!
+
+# Workaround for curly brace expansion not working with a single value.
+# E.g. '**/*.{rb}' will not match anything.
+file_pattern = if options.extensions.size == 1
+  "**/*.#{options.extensions.first}"
+else
+  "**/*.{#{options.extensions.join(',')}}"
+end
+path = File.join(options.directory, file_pattern)
 
 # slight hack using grep to only list non-binary files
 files_we_care_about = `git grep --cached -Ile '' -- #{path}`.split
@@ -31,13 +87,13 @@ end
 puts
 puts "****** by commits"
 
-stuff.sort_by { |_, s| -s[:commit_count] }.take(NUM).each do |file, details|
+stuff.sort_by { |_, s| -s[:commit_count] }.take(options.num_results).each do |file, details|
   puts "#{details[:commit_count]}\t#{file}"
 end
 
 puts
 puts "****** by lines"
 
-stuff.sort_by { |_, s| -s[:line_count] }.take(NUM).each do |file, details|
+stuff.sort_by { |_, s| -s[:line_count] }.take(options.num_results).each do |file, details|
   puts "#{details[:line_count]}\t#{file}"
 end
