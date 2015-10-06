@@ -2,8 +2,24 @@
 
 NUM = 20
 
+directory = ARGV.shift || "app"
+extensions = %w{
+  css
+  erb
+  haml
+  html
+  jbuilder
+  js
+  js
+  rb
+  scss
+  sql
+}
+file_pattern = ARGV.shift || "**/*.{#{extensions.join(',')}}"
+path = File.join(directory, file_pattern)
+
 # slight hack using grep to only list non-binary files
-files_we_care_about = `git grep --cached -Ile '' -- app`.split
+files_we_care_about = `git grep --cached -Ile '' -- #{path}`.split
 
 stuff = Hash.new { |h, k| h[k] = {} }
 
